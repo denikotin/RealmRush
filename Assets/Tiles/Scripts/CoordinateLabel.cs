@@ -8,18 +8,25 @@ using System;
 [RequireComponent(typeof(TextMeshPro))]
 public class CoordinateLabel : MonoBehaviour
 {
-    [SerializeField] Color defaultColor = Color.white;
-    [SerializeField] Color blockedColor = Color.grey;
+    [SerializeField] Color defaultColor;
+    [SerializeField] Color blockedColor;
+    [SerializeField] Color exploredColor;
+    [SerializeField] Color pathColor;
 
     TextMeshPro label;
     Vector2Int coordinates = new Vector2Int();
-    Waypoint waypoint;
+    GridManager gridManager;
 
     private void Awake()
     {
+        defaultColor = Color.white;
+        blockedColor = Color.grey;
+        exploredColor = Color.blue;
+        pathColor = Color.yellow;
+
+        gridManager = FindObjectOfType<GridManager>();
         label = GetComponent<TextMeshPro>();
-        label.enabled = false;
-        waypoint = GetComponentInParent<Waypoint>();
+        label.enabled = true;
         DisplayCoordinates();
     }
 
@@ -37,13 +44,26 @@ public class CoordinateLabel : MonoBehaviour
 
     private void SetLabelColor()
     {
-        if (waypoint.IsPlaceable)
+        if(gridManager == null) { return; }
+
+        Node node = gridManager.GetNode(coordinates);
+        if(node == null) { return; }
+
+        if (!node.isWalkable)
         {
-            label.color = defaultColor;
+            label.color = blockedColor;
+        }
+        else if (node.isPath)
+        {
+            label.color = pathColor;
+        }
+        else if (node.isExplored)
+        {
+            label.color = exploredColor;
         }
         else
         {
-            label.color = blockedColor; 
+            label.color = defaultColor;
         }
     }
 
@@ -57,8 +77,9 @@ public class CoordinateLabel : MonoBehaviour
 
     private void DisplayCoordinates()
     {
-        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / UnityEditor.EditorSnapSettings.move.x);
-        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / UnityEditor.EditorSnapSettings.move.z);
+        if(gridManager == null) { return; }
+        coordinates.x = Mathf.RoundToInt(transform.parent.position.x / gridManager.UnityGridSize);
+        coordinates.y = Mathf.RoundToInt(transform.parent.position.z / gridManager.UnityGridSize);
         label.text = $"{coordinates.x} , {coordinates.y}";
     }
 
